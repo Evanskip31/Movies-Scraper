@@ -100,10 +100,45 @@ for page in range(1, page_numbers+1):
         if not rating:
             rating = ''
         
+        # opening the page link for more details
+        details_page = requests.get(movie_link, headers=headers)
+        
+        page_soup = BeautifulSoup(details_page.content, 'html.parser')
+        
+        #verifying the present details
+        movie_info = page_soup.find_all('div', {'id': 'movie-info'})
+        
+        for each in movie_info:
+            verify = each.find('div', {'class':'hidden-xs'})
+        
+        # just to verify the year and genre of the movie if all were added well
+        movie_info = verify.find_all('h2')
+        year_verify = movie_info[0].get_text()
+        genre_verify = movie_info[1].get_text()
+        
+        # getting the trailer link
+        trailer_link = page_soup.find_all('div', {'id':'screenshots'})
+        
+        for trailer in trailer_link:
+            youtube_links = trailer.find('div',{'class':'screenshot'})
+        
+        youtube_link = youtube_links.find('a', {'class':'youtube'})
+        trailer_link = youtube_link['href']
+        
         # concatenate year and name to get the movie title which will be our primary key
         movie_title = movie_name+' - '+year
         movie_details[movie_title] = defaultdict(list)
         movie_details[movie_title]['Properties'].append({'Year': year,'language': language, 'Genre': genre, 'Rating': rating, 'Movie Link': movie_link})
         
+        
     print(f'{page} finished!')
     print('\n')
+    
+# we now have the basic details. we need to get into each link and obtain more details
+# since we saved the link to each movie, we can easily do that
+for item in movie_details.keys():
+    item_properties = movie_details[item]['Properties']
+    for each in item_properties:
+        new_properties_url = each['Movie Link']
+    # we now use the link we obtained above to access its page
+    details_page = requests.get(new_properties_url, headers=headers)
