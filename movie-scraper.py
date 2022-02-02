@@ -125,6 +125,94 @@ for page in range(1, page_numbers+1):
         youtube_link = youtube_links.find('a', {'class':'youtube'})
         trailer_link = youtube_link['href']
         
+        # obtaining the synopsis of the movie / short story and date uploaded
+        synopsis = page_soup.find_all('div', {'id':'synopsis'})
+        
+        for synopses in synopsis:
+            synopsis_text = synopses.find('p', {'class':"hidden-xs"})
+            date_uploaded = synopses.find('span', {"itemprop":"dateCreated"})
+            
+        synopsis_text = synopsis_text.get_text()
+        date_uploaded_raw = date_uploaded.get_text()
+        
+        #clean the date_uploaded_raw to get the date and time separately
+        z = 0
+        for i,m in enumerate(date_uploaded_raw):
+            if date_uploaded_raw[z] == 'a' and date_uploaded_raw[i] == 't':
+                k = z
+            z = i
+        date_uploaded = date_uploaded_raw[:k-1]
+        time_uploaded = date_uploaded_raw[k+3:]
+        
+        # let's get the director and actors of the movie
+        all_cast = page_soup.find_all('div', {'id':'crew'})
+        for cast in all_cast:
+            director = cast.find('div', {'class':'directors'})
+            actors = cast.find('div', {'class':'actors'})
+        
+        # get the list of director names - make a list to save them in case they are more than one 
+        director_list = []
+        for each in director.find_all('div', {'class':'list-cast-info'}):
+            director_name = each.get_text()
+            director_list.append(director_name)
+        
+        # let's remove new lines added director_list
+        new_director_list = []
+        for i in director_list:
+            if '\n' in i:
+                new_director = i.replace('\n', '')
+                new_director_list.append(new_director)
+        
+        # strip the list to get strings concatenated together
+        all_director = ''
+        for director in new_director_list:
+            if len(new_director_list) == 1:
+                all_director += new_director_list[0]
+            else:
+                if not all_director:
+                    all_director += director
+                else:
+                    all_director += ' / ' + director
+        
+        # get the list of director names - make a list to save them in case they are more than one 
+        actor_list = []
+        for actor in actors.find_all('div', {'class':'list-cast-info'}):
+            actor_name = actor.get_text()
+            actor_list.append(actor_name)
+        
+        # let's remove new lines added actor_list
+        new_actor_list = []
+        for i in actor_list:
+            if '\n' in i:
+                new_actor = i.replace('\n', '')
+                new_actor_list.append(new_actor)
+            
+        # let's make things even more interesting by separating the actor names
+        all_cast = ''
+        all_actors = ''
+        for item in new_actor_list:
+            x = 0
+            for i,m in enumerate(item):
+                if item[x] == 'a' and item[i] == 's':
+                    j = x
+                    l = i
+                    print(x, i)
+                x = i
+            # getting cast name and concatenating all of them
+            cast_name = item[l+2:]
+            if not all_cast:
+                all_cast += cast_name
+            else:
+                all_cast += ' / ' + cast_name
+                
+            # getting the real names and concatenating all of them
+            real_name = item[:k-1]
+            if not all_actors:
+                all_actors += real_name
+            else:
+                all_actors += ' / ' + real_name
+            print(cast_name, real_name)
+            
         # concatenate year and name to get the movie title which will be our primary key
         movie_title = movie_name+' - '+year
         movie_details[movie_title] = defaultdict(list)
