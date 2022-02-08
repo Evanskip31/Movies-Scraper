@@ -99,124 +99,202 @@ for page in range(1, page_numbers+1):
                     genre += ' / ' + every.get_text()
         if not rating:
             rating = ''
-        
-        # opening the page link for more details
-        details_page = requests.get(movie_link, headers=headers)
-        
-        page_soup = BeautifulSoup(details_page.content, 'html.parser')
-        
-        #verifying the present details
-        movie_info = page_soup.find_all('div', {'id': 'movie-info'})
-        
-        for each in movie_info:
-            verify = each.find('div', {'class':'hidden-xs'})
-        
-        # just to verify the year and genre of the movie if all were added well
-        movie_info = verify.find_all('h2')
-        year_verify = movie_info[0].get_text()
-        genre_verify = movie_info[1].get_text()
-        
-        # getting the trailer link
-        trailer_link = page_soup.find_all('div', {'id':'screenshots'})
-        
-        for trailer in trailer_link:
-            youtube_links = trailer.find('div',{'class':'screenshot'})
-        
-        youtube_link = youtube_links.find('a', {'class':'youtube'})
-        trailer_link = youtube_link['href']
-        
-        # obtaining the synopsis of the movie / short story and date uploaded
-        synopsis = page_soup.find_all('div', {'id':'synopsis'})
-        
-        for synopses in synopsis:
-            synopsis_text = synopses.find('p', {'class':"hidden-xs"})
-            date_uploaded = synopses.find('span', {"itemprop":"dateCreated"})
+        if year == '0000':
+            continue
+        else:
+            # opening the page link for more details
+            details_page = requests.get(movie_link, headers=headers)
             
-        synopsis_text = synopsis_text.get_text()
-        date_uploaded_raw = date_uploaded.get_text()
-        
-        #clean the date_uploaded_raw to get the date and time separately
-        z = 0
-        for i,m in enumerate(date_uploaded_raw):
-            if date_uploaded_raw[z] == 'a' and date_uploaded_raw[i] == 't':
-                k = z
-            z = i
-        date_uploaded = date_uploaded_raw[:k-1]
-        time_uploaded = date_uploaded_raw[k+3:]
-        
-        # let's get the director and actors of the movie
-        all_cast = page_soup.find_all('div', {'id':'crew'})
-        for cast in all_cast:
-            director = cast.find('div', {'class':'directors'})
-            actors = cast.find('div', {'class':'actors'})
-        
-        # get the list of director names - make a list to save them in case they are more than one 
-        director_list = []
-        for each in director.find_all('div', {'class':'list-cast-info'}):
-            director_name = each.get_text()
-            director_list.append(director_name)
-        
-        # let's remove new lines added director_list
-        new_director_list = []
-        for i in director_list:
-            if '\n' in i:
-                new_director = i.replace('\n', '')
-                new_director_list.append(new_director)
-        
-        # strip the list to get strings concatenated together
-        all_director = ''
-        for director in new_director_list:
-            if len(new_director_list) == 1:
-                all_director += new_director_list[0]
-            else:
-                if not all_director:
-                    all_director += director
-                else:
-                    all_director += ' / ' + director
-        
-        # get the list of director names - make a list to save them in case they are more than one 
-        actor_list = []
-        for actor in actors.find_all('div', {'class':'list-cast-info'}):
-            actor_name = actor.get_text()
-            actor_list.append(actor_name)
-        
-        # let's remove new lines added actor_list
-        new_actor_list = []
-        for i in actor_list:
-            if '\n' in i:
-                new_actor = i.replace('\n', '')
-                new_actor_list.append(new_actor)
+            # finding the status code
+            if details_page.status_code == 404:
+                continue
+            page_soup = BeautifulSoup(details_page.content, 'html.parser')
             
-        # let's make things even more interesting by separating the actor names
-        all_cast = ''
-        all_actors = ''
-        for item in new_actor_list:
-            x = 0
-            for i,m in enumerate(item):
-                if item[x] == 'a' and item[i] == 's':
-                    j = x
-                    l = i
-                    print(x, i)
-                x = i
-            # getting cast name and concatenating all of them
-            cast_name = item[l+2:]
-            if not all_cast:
-                all_cast += cast_name
+            #verifying the present details
+            movie_info = page_soup.find_all('div', {'id': 'movie-info'})
+            
+            for each in movie_info:
+                verify = each.find('div', {'class':'hidden-xs'})
+            
+            # just to verify the year and genre of the movie if all were added well
+            movie_info = verify.find_all('h2')
+            year_verify = movie_info[0].get_text()
+            genre_verify = movie_info[1].get_text()
+            
+            #adding genre details in case they are not there
+            if genre_verify == genre:
+                print('They are the same!')
             else:
-                all_cast += ' / ' + cast_name
+                print('Something not there!')
+                genre = genre_verify
+            
+            # getting the trailer link
+            trailer_link = page_soup.find_all('div', {'id':'screenshots'})
+            
+            for trailer in trailer_link:
+                youtube_links = trailer.find('div',{'class':'screenshot'})
+            
+            youtube_link = youtube_links.find('a', {'class':'youtube'})
+            trailer_link = youtube_link['href']
+            
+            # obtaining the synopsis of the movie / short story and date uploaded
+            synopsis = page_soup.find_all('div', {'id':'synopsis'})
+            
+            for synopses in synopsis:
+                synopsis_text = synopses.find('p', {'class':"hidden-xs"})
+                date_uploaded = synopses.find('span', {"itemprop":"dateCreated"})
                 
-            # getting the real names and concatenating all of them
-            real_name = item[:k-1]
-            if not all_actors:
-                all_actors += real_name
-            else:
-                all_actors += ' / ' + real_name
-            print(cast_name, real_name)
+            synopsis_txt = synopsis_text.get_text().strip()
+            date_uploaded_raw = date_uploaded.get_text()
             
-        # concatenate year and name to get the movie title which will be our primary key
-        movie_title = movie_name+' - '+year
-        movie_details[movie_title] = defaultdict(list)
-        movie_details[movie_title]['Properties'].append({'Year': year,'language': language, 'Genre': genre, 'Rating': rating, 'Movie Link': movie_link})
+            #clean the date_uploaded_raw to get the date and time separately
+            z = 0
+            for i,m in enumerate(date_uploaded_raw):
+                if date_uploaded_raw[z] == 'a' and date_uploaded_raw[i] == 't':
+                    k = z
+                z = i
+            date_uploaded = date_uploaded_raw[:k-1]
+            time_uploaded = date_uploaded_raw[k+3:]
+            
+            # let's get the director and actors of the movie
+            all_cast = page_soup.find_all('div', {'id':'crew'})
+            for cast in all_cast:
+                director = cast.find('div', {'class':'directors'})
+                actors = cast.find('div', {'class':'actors'})
+            
+            # get the list of director names - make a list to save them in case they are more than one 
+            director_list = []
+            for each in director.find_all('div', {'class':'list-cast-info'}):
+                director_name = each.get_text()
+                director_list.append(director_name)
+            
+            # let's remove new lines added director_list
+            new_director_list = []
+            for i in director_list:
+                if '\n' in i:
+                    new_director = i.replace('\n', '')
+                    new_director_list.append(new_director)
+            
+            # strip the list to get strings concatenated together
+            all_director = ''
+            for director in new_director_list:
+                if len(new_director_list) == 1:
+                    all_director += new_director_list[0]
+                else:
+                    if not all_director:
+                        all_director += director
+                    else:
+                        all_director += ' / ' + director
+            
+            # get the list of director names - make a list to save them in case they are more than one 
+            actor_list = []
+            for actor in actors.find_all('div', {'class':'list-cast-info'}):
+                actor_name = actor.get_text()
+                actor_list.append(actor_name)
+            
+            # let's remove new lines added actor_list
+            new_actor_list = []
+            for i in actor_list:
+                if '\n' in i:
+                    new_actor = i.replace('\n', '')
+                    new_actor_list.append(new_actor)
+                
+            # let's make things even more interesting by separating the actor names
+            all_cast = ''
+            all_actors = ''
+            for item in new_actor_list:
+                x = 0
+                for i,m in enumerate(item):
+                    if item[x] == 'a' and item[i] == 's':
+                        j = x
+                        l = i
+                        print(x, i)
+                    x = i
+                # getting cast name and concatenating all of them
+                cast_name = item[l+2:]
+                if not all_cast:
+                    all_cast += cast_name
+                else:
+                    all_cast += ' / ' + cast_name
+                    
+                # getting the real names and concatenating all of them
+                real_name = item[:k-1]
+                if not all_actors:
+                    all_actors += real_name
+                else:
+                    all_actors += ' / ' + real_name
+                print(cast_name, real_name)
+                
+            # let's get the tech specs of the movie - movie quality and size
+            tech_specs = page_soup.find_all('div', {'id':'movie-tech-specs'})
+            
+            # we will then find the number of available quality options
+            for quality in tech_specs:
+                quality_options = quality.find_all('span', {'class':'tech-quality'})
+                quality_details = quality.find_all('div', {'class':'tech-spec-info'})
+                
+            
+            # since we now have the options, parse through it to get details
+            len_quality_options = len(quality_options)
+            
+            ### putting the quality options into a list
+            #quality_options = quality_options.get_text()
+            
+            if len_quality_options == 1:
+                quality = quality_options[0].get_text().strip()
+                for size in quality_details:
+                    movie_size = size.find('div', {'class':'tech-spec-element'})
+                    movie_size = movie_size.get_text().strip()
+                    
+            elif len_quality_options == 2:
+                quality_1 = quality_options[0].get_text().strip()
+                quality_2 = quality_options[1].get_text().strip()
+                list_quality = []
+                for size in quality_details:
+                    movie_size = size.find('div', {'class':'tech-spec-element'})
+                    list_quality.append(movie_size.get_text())
+                movie_size_low = list_quality[0]
+                movie_size_mid = list_quality[1]
+                    
+            elif len_quality_options == 3:
+                quality_1 = quality_options[0].get_text().strip()
+                quality_2 = quality_options[1].get_text().strip()
+                quality_3 = quality_options[2].get_text().strip()
+                list_quality = []
+                for size in quality_details:
+                    movie_size = size.find('div', {'class':'tech-spec-element'})
+                    list_quality.append(movie_size.get_text())
+                movie_size_low = list_quality[0]
+                movie_size_mid = list_quality[1]
+                movie_size_high = list_quality[2]
+                    
+            else:
+                quality_1 = quality_options[0].get_text().strip()
+                quality_2 = quality_options[1].get_text().strip()
+                quality_3 = quality_options[2].get_text().strip()
+                quality_4 = quality_options[-1].get_text().strip()
+                list_quality = []
+                for size in quality_details:
+                    movie_size = size.find('div', {'class':'tech-spec-element'})
+                    list_quality.append(movie_size.get_text())
+                movie_size_low = list_quality[0]
+                movie_size_mid = list_quality[1]
+                movie_size_high = list_quality[2]
+                movie_size_high = list_quality[3]
+            
+            # movie length / Runtime
+            for tech in quality_details:
+                tech_details = tech.find_all('div', {'class':'tech-spec-element'})
+            
+            movie_length = tech_details[-2].get_text().strip()
+            
+            # concatenate year and name to get the movie title which will be our primary key
+            movie_title = movie_name+' - '+year
+            movie_details[movie_title] = defaultdict(list)
+            movie_details[movie_title]['Properties'].append({'Year': year,'language': language, 'Genre': genre, 'Rating': rating, 
+                                                             'Movie Link': movie_link, 'Trailer_link': trailer_link, 'Synopsis': synopsis_txt, 
+                                                             'Date Uploaded': date_uploaded, 'Time Uploaded': time_uploaded, 
+                                                             'Movie Director': all_director, 'Cast Names': all_cast, 'Cast Real Names': all_actors})
         
         
     print(f'{page} finished!')
