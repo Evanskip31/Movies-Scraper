@@ -218,7 +218,7 @@ for page in range(1, page_numbers+1):
                     all_cast += ' / ' + cast_name
                     
                 # getting the real names and concatenating all of them
-                real_name = item[:k-1]
+                real_name = item[:j-1]
                 if not all_actors:
                     all_actors += real_name
                 else:
@@ -237,51 +237,25 @@ for page in range(1, page_numbers+1):
             # since we now have the options, parse through it to get details
             len_quality_options = len(quality_options)
             
-            ### putting the quality options into a list
+           
+                
             #quality_options = quality_options.get_text()
             
-            if len_quality_options == 1:
-                quality = quality_options[0].get_text().strip()
-                for size in quality_details:
-                    movie_size = size.find('div', {'class':'tech-spec-element'})
-                    movie_size = movie_size.get_text().strip()
-                    
-            elif len_quality_options == 2:
-                quality_1 = quality_options[0].get_text().strip()
-                quality_2 = quality_options[1].get_text().strip()
-                list_quality = []
-                for size in quality_details:
-                    movie_size = size.find('div', {'class':'tech-spec-element'})
-                    list_quality.append(movie_size.get_text())
-                movie_size_low = list_quality[0]
-                movie_size_mid = list_quality[1]
-                    
-            elif len_quality_options == 3:
-                quality_1 = quality_options[0].get_text().strip()
-                quality_2 = quality_options[1].get_text().strip()
-                quality_3 = quality_options[2].get_text().strip()
-                list_quality = []
-                for size in quality_details:
-                    movie_size = size.find('div', {'class':'tech-spec-element'})
-                    list_quality.append(movie_size.get_text())
-                movie_size_low = list_quality[0]
-                movie_size_mid = list_quality[1]
-                movie_size_high = list_quality[2]
-                    
-            else:
-                quality_1 = quality_options[0].get_text().strip()
-                quality_2 = quality_options[1].get_text().strip()
-                quality_3 = quality_options[2].get_text().strip()
-                quality_4 = quality_options[-1].get_text().strip()
-                list_quality = []
-                for size in quality_details:
-                    movie_size = size.find('div', {'class':'tech-spec-element'})
-                    list_quality.append(movie_size.get_text())
-                movie_size_low = list_quality[0]
-                movie_size_mid = list_quality[1]
-                movie_size_high = list_quality[2]
-                movie_size_high = list_quality[3]
+            # putting to a list all the quality size details
+            list_quality_size = []
+            for size in quality_details:
+                movie_size = size.find('div', {'class':'tech-spec-element'})
+                list_quality_size.append(movie_size.get_text())        
             
+            ### putting the quality options into a list as well as concatenating size details to it
+            graphics_options = ''
+            for x,frame in enumerate(quality_options):
+                graphics = frame.get_text().strip() + " - " + list_quality_size[x].strip()
+                if not graphics_options:
+                    graphics_options += graphics
+                else:
+                    graphics_options += " / " + graphics
+                    
             # movie length / Runtime
             for tech in quality_details:
                 tech_details = tech.find_all('div', {'class':'tech-spec-element'})
@@ -292,9 +266,10 @@ for page in range(1, page_numbers+1):
             movie_title = movie_name+' - '+year
             movie_details[movie_title] = defaultdict(list)
             movie_details[movie_title]['Properties'].append({'Year': year,'language': language, 'Genre': genre, 'Rating': rating, 
-                                                             'Movie Link': movie_link, 'Trailer_link': trailer_link, 'Synopsis': synopsis_txt, 
+                                                             'Movie Link': movie_link, 'Trailer_link': trailer_link, 
                                                              'Date Uploaded': date_uploaded, 'Time Uploaded': time_uploaded, 
-                                                             'Movie Director': all_director, 'Cast Names': all_cast, 'Cast Real Names': all_actors})
+                                                             'Movie Director': all_director, 'Cast Names': all_cast, 'Cast Real Names': all_actors, 
+                                                             'Movie Length': movie_length, 'Graphics': graphics_options, 'Synopsis': synopsis_txt})
         
         
     print(f'{page} finished!')
