@@ -4,6 +4,9 @@ You are probably tired of navigating through a movie website to get the right mo
 
 This code scrapes movies from [this site](https://yts.mx). 
 
+If you want this code available to you locally, you can clone it:
+`git clone https://github.com/Evanskip31/Movies-Scraper.git`
+
 The very first thing is to import all the necessary libraries for this task. These include:
 ```
 import requests
